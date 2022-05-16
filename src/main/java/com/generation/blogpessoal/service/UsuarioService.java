@@ -3,14 +3,36 @@ package com.generation.blogpessoal.service;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
-import org.apache.commons.codec.binary.Base64;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-
 import com.generation.blogpessoal.model.Usuario;
 import com.generation.blogpessoal.model.UsuarioLogin;
 import com.generation.blogpessoal.repository.UsuarioRepository;
+
+import org.apache.commons.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+/**
+ *  A Classe UsuarioService implementa as regras de negócio do Recurso Usuario.
+ *  
+ *  Regras de negócio são as particularidades das funcionalidades a serem 
+ *  implementadas no objeto, tais como:
+ *  
+ *  1) O Usuário não pode estar duplicado no Banco de dados
+ *  2) A senha do Usuario deve ser criptografada
+ *  
+ *  Observe que toda a implementação dos metodos Cadastrar, Atualizar e 
+ *  Logar estão implmentadas na classe de serviço, enquanto a Classe
+ *  Controller se limitará a checar a resposta da requisição.
+ */
+
+ /**
+ * A Anotação @Service indica que esta é uma Classe de Serviço, ou seja,
+ * implementa todas regras de negócio do Recurso Usuário.
+ */
+
 
 @Service
 public class UsuarioService {
@@ -68,7 +90,21 @@ public class UsuarioService {
 		if(usuarioRepository.findById(usuario.getId()).isPresent()) {
 			
 			/**
-		 	* Se o Usuário existir no Banco de Dados, a senha será criptografada
+			 * Cria um Objeto Optional com o resultado do método findById
+			 */
+			Optional<Usuario> buscaUsuario = usuarioRepository.findByUsuario(usuario.getUsuario());
+			
+			/**
+			 * Se o Usuário existir no Banco de dados e o Id do Usuário encontrado no Banco for 
+			 * diferente do usuário do Id do Usuário enviado na requisição, a Atualização dos 
+			 * dados do Usuário não pode ser realizada.
+			 */
+			if ( (buscaUsuario.isPresent()) && ( buscaUsuario.get().getId() != usuario.getId()))
+				throw new ResponseStatusException(
+						HttpStatus.BAD_REQUEST, "Usuário já existe!", null);
+
+			/**
+		 	* Se o Usuário existir no Banco de Dados e o Id for o mesmo, a senha será criptografada
 		 	* através do Método criptografarSenha.
 		 	*/
 			usuario.setSenha(criptografarSenha(usuario.getSenha()));
